@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tail:*)",
+      "Bash(head:*)",
+      "Bash(cd /c/Users/Danny/WebApps/jarvis2 && npm run build 2>&1)",
+      "Bash(rm C:/Users/Danny/WebApps/jarvis2/src/lib/journal-storage.ts C:/Users/Danny/WebApps/jarvis2/src/lib/task-storage.ts)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

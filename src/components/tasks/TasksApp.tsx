@@ -8,6 +8,7 @@ import {
   useCreateTask,
   useUpdateTask,
   useDeleteTask,
+  useMergeTasks,
   computeTagCounts,
   getChildrenOf,
 } from "@/lib/useTasks";
@@ -17,7 +18,9 @@ import { TaskBoard } from "./TaskBoard";
 import { TaskFormModal } from "./TaskFormModal";
 import { TaskSummaryModal } from "./TaskSummaryModal";
 import { TaskTagSidebar } from "./TaskTagSidebar";
+import { MergeTasksModal } from "./MergeTasksModal";
 import { generateTaskSummary } from "@/services/task-summary";
+import { GitMerge, X } from "lucide-react";
 
 const priorityOrder: Record<string, number> = { urgent: 0, normal: 1, low: 2 };
 
@@ -27,6 +30,7 @@ export function TasksApp() {
   const createTaskMutation = useCreateTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
+  const mergeTasksMutation = useMergeTasks();
 
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
   const [sortBy, setSortBy] = useState<"newest" | "priority" | "dueDate">("newest");
@@ -40,6 +44,9 @@ export function TasksApp() {
   const [summaryText, setSummaryText] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showMergeModal, setShowMergeModal] = useState(false);
 
   const reload = useCallback(() => {
     /* no-op: reactive query */
@@ -82,6 +89,7 @@ export function TasksApp() {
         tags: task.tags,
         dueDate: task.dueDate,
         parentId: task.parentId,
+        notes: task.notes,
       });
       setShowForm(false);
       setEditingTask(undefined);
@@ -102,6 +110,7 @@ export function TasksApp() {
         tags: task.tags,
         dueDate: task.dueDate,
         parentId: task.parentId,
+        notes: task.notes,
       });
       setShowForm(false);
       setEditingTask(undefined);
@@ -202,6 +211,40 @@ export function TasksApp() {
     setSubtaskParentId(null);
   }, []);
 
+  const handleToggleSelectionMode = useCallback(() => {
+    setSelectionMode((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }, []);
+
+  const handleToggleSelect = useCallback((id: Id<"tasks">) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectedTasks = useMemo(
+    () => tasks.filter((t) => selectedIds.has(t._id)),
+    [tasks, selectedIds],
+  );
+
+  const handleConfirmMerge = useCallback(
+    async (keepId: Id<"tasks">) => {
+      const mergeIds = selectedTasks
+        .filter((t) => t._id !== keepId)
+        .map((t) => t._id);
+      await mergeTasksMutation({ keepId, mergeIds });
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+      setShowMergeModal(false);
+    },
+    [selectedTasks, mergeTasksMutation],
+  );
+
   return (
     <div className={`w-full flex flex-col lg:flex-row gap-6 ${viewMode === "board" ? "max-w-full" : "max-w-6xl"}`}>
       {/* Sidebar */}
@@ -224,6 +267,8 @@ export function TasksApp() {
           onSummary={handleSummary}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          selectionMode={selectionMode}
+          onToggleSelectionMode={handleToggleSelectionMode}
         />
 
         {viewMode === "list" ? (
@@ -233,6 +278,9 @@ export function TasksApp() {
             onEdit={handleEdit}
             onDelete={handleDeleteRequest}
             onAddSubtask={handleAddSubtask}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
           />
         ) : (
           <TaskBoard
@@ -244,6 +292,42 @@ export function TasksApp() {
           />
         )}
       </div>
+
+      {/* Floating merge bar */}
+      {selectionMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white rounded-2xl shadow-xl px-5 py-3 flex items-center gap-4">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
+          <button
+            onClick={() => setShowMergeModal(true)}
+            disabled={selectedIds.size < 2}
+            className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <GitMerge className="w-4 h-4" />
+            Merge
+          </button>
+          <button
+            onClick={() => {
+              setSelectedIds(new Set());
+              setSelectionMode(false);
+            }}
+            className="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            title="Clear selection"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Merge modal */}
+      {showMergeModal && (
+        <MergeTasksModal
+          tasks={selectedTasks}
+          onConfirm={handleConfirmMerge}
+          onClose={() => setShowMergeModal(false)}
+        />
+      )}
 
       {/* Form modal */}
       {showForm && (

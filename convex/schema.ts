@@ -38,6 +38,7 @@ export default defineSchema({
     tags: v.array(v.string()),
     dueDate: v.union(v.string(), v.null()),
     parentId: v.union(v.id("tasks"), v.null()),
+    notes: v.optional(v.string()),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])

@@ -10,9 +10,21 @@ interface Props {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onAddSubtask: (parentId: Id<"tasks">) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: Id<"tasks">) => void;
 }
 
-export function TaskSubtaskList({ parentId, allTasks, onEdit, onDelete, onAddSubtask }: Props) {
+export function TaskSubtaskList({
+  parentId,
+  allTasks,
+  onEdit,
+  onDelete,
+  onAddSubtask,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
+}: Props) {
   const children = allTasks.filter((t) => t.parentId === parentId);
 
   if (children.length === 0) return null;
@@ -27,6 +39,9 @@ export function TaskSubtaskList({ parentId, allTasks, onEdit, onDelete, onAddSub
           onEdit={onEdit}
           onDelete={onDelete}
           onAddSubtask={onAddSubtask}
+          selectionMode={selectionMode}
+          selectedIds={selectedIds}
+          onToggleSelect={onToggleSelect}
         />
       ))}
     </div>

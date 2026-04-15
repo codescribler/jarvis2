@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, List, Columns3, Sparkles } from "lucide-react";
+import { Plus, List, Columns3, Sparkles, CheckSquare } from "lucide-react";
 import { TaskStatus } from "@/types/task";
 
 export type ViewMode = "list" | "board";
@@ -14,6 +14,8 @@ interface Props {
   onSummary: () => void;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  selectionMode?: boolean;
+  onToggleSelectionMode?: () => void;
 }
 
 const statusOptions: { value: TaskStatus | "all"; label: string }[] = [
@@ -25,7 +27,7 @@ const statusOptions: { value: TaskStatus | "all"; label: string }[] = [
   { value: "done", label: "Done" },
 ];
 
-export function TaskToolbar({ statusFilter, onStatusFilterChange, sortBy, onSortChange, onNewTask, onSummary, viewMode, onViewModeChange }: Props) {
+export function TaskToolbar({ statusFilter, onStatusFilterChange, sortBy, onSortChange, onNewTask, onSummary, viewMode, onViewModeChange, selectionMode, onToggleSelectionMode }: Props) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       {/* View toggle */}
@@ -76,6 +78,20 @@ export function TaskToolbar({ statusFilter, onStatusFilterChange, sortBy, onSort
         <option value="priority">Priority</option>
         <option value="dueDate">Due Date</option>
       </select>
+
+      {viewMode === "list" && onToggleSelectionMode && (
+        <button
+          onClick={onToggleSelectionMode}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+            selectionMode
+              ? "bg-indigo-600 text-white hover:bg-indigo-700"
+              : "text-slate-600 bg-slate-100 hover:bg-slate-200"
+          }`}
+        >
+          <CheckSquare className="w-4 h-4" />
+          {selectionMode ? "Done" : "Select"}
+        </button>
+      )}
 
       <button
         onClick={onSummary}

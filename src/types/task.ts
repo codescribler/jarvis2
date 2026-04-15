@@ -15,5 +15,6 @@ export interface Task {
   tags: string[];
   dueDate: string | null;
   parentId: Id<"tasks"> | null;
+  notes?: string;
   updatedAt: number;
 }

@@ -11,9 +11,21 @@ interface Props {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onAddSubtask: (parentId: Id<"tasks">) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: Id<"tasks">) => void;
 }
 
-export function TaskList({ tasks, allTasks, onEdit, onDelete, onAddSubtask }: Props) {
+export function TaskList({
+  tasks,
+  allTasks,
+  onEdit,
+  onDelete,
+  onAddSubtask,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
+}: Props) {
   if (tasks.length === 0) {
     return (
       <div className="text-center py-16 text-slate-300">
@@ -34,6 +46,9 @@ export function TaskList({ tasks, allTasks, onEdit, onDelete, onAddSubtask }: Pr
           onEdit={onEdit}
           onDelete={onDelete}
           onAddSubtask={onAddSubtask}
+          selectionMode={selectionMode}
+          selectedIds={selectedIds}
+          onToggleSelect={onToggleSelect}
         />
       ))}
     </div>

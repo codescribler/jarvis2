@@ -68,6 +68,7 @@ export const create = mutation({
     tags: v.array(v.string()),
     dueDate: v.union(v.string(), v.null()),
     parentId: v.union(v.id("tasks"), v.null()),
+    notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await requireUserId(ctx);
@@ -82,6 +83,7 @@ export const create = mutation({
       tags: normalizeTags(args.tags),
       dueDate: args.dueDate,
       parentId: args.parentId,
+      notes: args.notes,
       updatedAt: now,
     });
   },
@@ -98,6 +100,7 @@ export const update = mutation({
     tags: v.optional(v.array(v.string())),
     dueDate: v.optional(v.union(v.string(), v.null())),
     parentId: v.optional(v.union(v.id("tasks"), v.null())),
+    notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await requireUserId(ctx);
@@ -134,6 +137,59 @@ async function collectDescendants(
   }
   return result;
 }
+
+export const merge = mutation({
+  args: {
+    keepId: v.id("tasks"),
+    mergeIds: v.array(v.id("tasks")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireUserId(ctx);
+    const keeper = await ctx.db.get(args.keepId);
+    if (!keeper || keeper.userId !== userId) {
+      throw new Error("Not found");
+    }
+
+    const mergedTitles: string[] = [];
+    const mergedTagSet = new Set<string>(keeper.tags);
+    for (const id of args.mergeIds) {
+      if (id === args.keepId) continue;
+      const other = await ctx.db.get(id);
+      if (!other || other.userId !== userId) continue;
+      mergedTitles.push(other.title);
+      for (const tag of other.tags) mergedTagSet.add(tag);
+    }
+
+    if (mergedTitles.length === 0) return;
+
+    const existingNotes = keeper.notes?.trim() ?? "";
+    const appended = mergedTitles.map((t) => `- ${t}`).join("\n");
+    const newNotes = existingNotes
+      ? `${existingNotes}\n\nMerged:\n${appended}`
+      : `Merged:\n${appended}`;
+
+    await ctx.db.patch(args.keepId, {
+      notes: newNotes,
+      tags: Array.from(mergedTagSet),
+      updatedAt: Date.now(),
+    });
+
+    // Reparent any children of merged tasks to the keeper, then delete
+    for (const id of args.mergeIds) {
+      if (id === args.keepId) continue;
+      const children = await ctx.db
+        .query("tasks")
+        .withIndex("by_user_parent", (q) =>
+          q.eq("userId", userId).eq("parentId", id),
+        )
+        .collect();
+      for (const child of children) {
+        await ctx.db.patch(child._id, { parentId: args.keepId });
+      }
+      await ctx.db.delete(id);
+    }
+  },
+});
 
 export const remove = mutation({
   args: { id: v.id("tasks") },

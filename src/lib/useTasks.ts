@@ -21,6 +21,7 @@ export type CreateTaskInput = {
   tags: string[];
   dueDate: string | null;
   parentId: Id<"tasks"> | null;
+  notes?: string;
 };
 
 export function extractedToCreateInput(task: ExtractedTask): CreateTaskInput {
@@ -51,6 +52,10 @@ export function useUpdateTask() {
 export function useDeleteTask() {
   const mutate = useMutation(api.tasks.remove);
   return (id: Id<"tasks">) => mutate({ id });
+}
+
+export function useMergeTasks() {
+  return useMutation(api.tasks.merge);
 }
 
 export function computeTagCounts(

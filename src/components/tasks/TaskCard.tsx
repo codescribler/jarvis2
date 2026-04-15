@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ChevronDown, Pencil, Trash2, Plus, Calendar } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Trash2, Plus, Calendar, Check } from "lucide-react";
 import { Task } from "@/types/task";
 import { Id } from "../../../convex/_generated/dataModel";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
@@ -15,19 +15,63 @@ interface Props {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onAddSubtask: (parentId: Id<"tasks">) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: Id<"tasks">) => void;
 }
 
-export function TaskCard({ task, allTasks, onEdit, onDelete, onAddSubtask }: Props) {
+export function TaskCard({
+  task,
+  allTasks,
+  onEdit,
+  onDelete,
+  onAddSubtask,
+  selectionMode = false,
+  selectedIds,
+  onToggleSelect,
+}: Props) {
+  const isSelected = selectedIds?.has(task._id) ?? false;
   const [expanded, setExpanded] = useState(false);
   const children = allTasks.filter((t) => t.parentId === task._id);
   const hasChildren = children.length > 0;
 
+  const handleCardClick = () => {
+    if (selectionMode) {
+      onToggleSelect?.(task._id);
+    } else {
+      onEdit(task);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm group">
+    <div
+      className={`bg-white rounded-2xl border shadow-sm group cursor-pointer transition-all ${
+        isSelected
+          ? "border-indigo-400 ring-2 ring-indigo-200"
+          : "border-slate-100 hover:border-slate-200"
+      }`}
+      onClick={handleCardClick}
+    >
       <div className="p-4 flex items-start gap-3">
+        {/* Selection checkbox */}
+        {selectionMode && (
+          <div
+            className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
+              isSelected
+                ? "bg-indigo-600 border-indigo-600"
+                : "border-slate-300 bg-white"
+            }`}
+          >
+            {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+          </div>
+        )}
+
         {/* Expand toggle */}
         <button
-          onClick={() => setExpanded(!expanded)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
           className={`mt-0.5 p-0.5 rounded text-slate-400 hover:text-slate-600 transition-colors ${
             hasChildren ? "" : "invisible"
           }`}
@@ -74,33 +118,47 @@ export function TaskCard({ task, allTasks, onEdit, onDelete, onAddSubtask }: Pro
                 {children.length} subtask{children.length !== 1 ? "s" : ""}
               </span>
             )}
+            {task.notes && (
+              <span className="text-xs text-slate-400">• notes</span>
+            )}
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <button
-            onClick={() => onAddSubtask(task._id)}
-            className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-            title="Add subtask"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onEdit(task)}
-            className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-            title="Edit"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onDelete(task)}
-            className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-            title="Delete"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+        {!selectionMode && (
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddSubtask(task._id);
+              }}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+              title="Add subtask"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(task);
+              }}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+              title="Edit"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(task);
+              }}
+              className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Subtasks */}
@@ -111,6 +169,9 @@ export function TaskCard({ task, allTasks, onEdit, onDelete, onAddSubtask }: Pro
           onEdit={onEdit}
           onDelete={onDelete}
           onAddSubtask={onAddSubtask}
+          selectionMode={selectionMode}
+          selectedIds={selectedIds}
+          onToggleSelect={onToggleSelect}
         />
       )}
     </div>

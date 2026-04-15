@@ -106,7 +106,8 @@ Return ONLY the JSON object, no other text.`,
 };
 
 export const connectLiveTranscription = async (
-  callbacks: TranscriptionCallbacks
+  callbacks: TranscriptionCallbacks,
+  options: { initialTranscript?: string } = {}
 ) => {
   if (!API_KEY || API_KEY === "PLACEHOLDER_API_KEY") {
     throw new Error(
@@ -121,7 +122,10 @@ export const connectLiveTranscription = async (
       .webkitAudioContext)({ sampleRate: 16000 });
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-  let currentInputTranscription = "";
+  let currentInputTranscription = options.initialTranscript ?? "";
+  if (currentInputTranscription && !currentInputTranscription.endsWith(" ")) {
+    currentInputTranscription += " ";
+  }
 
   // Closure-scoped cleanup instead of window global
   let audioCleanup: (() => void) | null = null;
@@ -131,7 +135,7 @@ export const connectLiveTranscription = async (
 
   // Await the session so connection errors propagate to the caller
   const session = await ai.live.connect({
-    model: "gemini-2.5-flash-native-audio-preview-12-2025",
+    model: "gemini-live-2.5-flash-preview",
     callbacks: {
       onopen: () => {
         console.log("[Jarvis] Live session opened, starting audio capture");
@@ -189,15 +193,27 @@ export const connectLiveTranscription = async (
         callbacks.onError(e);
       },
       onclose: (e: unknown) => {
-        console.log("[Jarvis] Live session closed:", e);
+        const closeInfo = e as { code?: number; reason?: string } | undefined;
+        console.log(
+          "[Jarvis] Live session closed — code:",
+          closeInfo?.code,
+          "reason:",
+          closeInfo?.reason,
+          "raw:",
+          e,
+        );
         sessionClosed = true;
         if (!intentionalClose) {
-          callbacks.onError("Live session closed unexpectedly. Check your API key.");
+          const reason = closeInfo?.reason || "unknown";
+          const code = closeInfo?.code ?? "n/a";
+          callbacks.onError(
+            `Live session closed (code ${code}): ${reason}`,
+          );
         }
       },
     },
     config: {
-      responseModalities: [Modality.AUDIO],
+      responseModalities: [Modality.TEXT],
       systemInstruction:
         "Listen to the user. Do not speak or respond. Just listen silently.",
       inputAudioTranscription: {},

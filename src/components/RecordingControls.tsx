@@ -1,16 +1,20 @@
 "use client";
 
-import { Mic, Square, Loader2 } from "lucide-react";
+import { Mic, Square, Loader2, ClipboardPaste, AlertTriangle, Wifi } from "lucide-react";
 import { AppStatus } from "@/types";
 import { TranscriptionPanel } from "./TranscriptionPanel";
+
+export type ConnectionState = "ok" | "reconnecting" | "dropped";
 
 interface Props {
   status: AppStatus;
   rawText: string;
   polishedText: string;
   error: string | null;
+  connectionState: ConnectionState;
   onStart: () => void;
   onStop: () => void;
+  onPaste: () => void;
 }
 
 export function RecordingControls({
@@ -18,9 +22,14 @@ export function RecordingControls({
   rawText,
   polishedText,
   error,
+  connectionState,
   onStart,
   onStop,
+  onPaste,
 }: Props) {
+  const showReconnecting = connectionState === "reconnecting";
+  const showDropped = connectionState === "dropped";
+
   return (
     <div className="bg-white rounded-3xl p-5 shadow-xl shadow-indigo-100/50 space-y-4">
       <div className="flex items-center gap-4">
@@ -51,7 +60,7 @@ export function RecordingControls({
         )}
 
         {/* Status text */}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p
             className={`font-semibold ${
               status === AppStatus.RECORDING
@@ -76,13 +85,58 @@ export function RecordingControls({
                 ? "Your speech will be transcribed and polished"
                 : ""}
           </p>
-          {error && (
-            <p className="mt-1 text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full inline-block">
-              {error}
-            </p>
-          )}
         </div>
+
+        {/* Paste button (visible when not recording/refining) */}
+        {status !== AppStatus.RECORDING && status !== AppStatus.REFINING && (
+          <button
+            onClick={onPaste}
+            className="flex items-center gap-2 px-4 py-2.5 text-indigo-700 bg-indigo-50 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors shrink-0"
+            title="Paste a transcript recorded elsewhere"
+          >
+            <ClipboardPaste className="w-4 h-4" />
+            Paste transcript
+          </button>
+        )}
       </div>
+
+      {/* Reconnecting banner */}
+      {showReconnecting && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <Wifi className="w-5 h-5 text-amber-600 shrink-0 animate-pulse" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800">
+              Connection dropped — reconnecting...
+            </p>
+            <p className="text-xs text-amber-700">
+              Your transcript so far is safe. Keep speaking.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Dropped / error banner */}
+      {showDropped && (
+        <div className="flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-red-800">
+              Recording session ended
+            </p>
+            <p className="text-xs text-red-700">
+              {error ||
+                "The live session was interrupted. Any captured text was saved. Tap the mic to continue."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Inline error (non-dropped) */}
+      {error && !showDropped && !showReconnecting && (
+        <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+          {error}
+        </p>
+      )}
 
       {/* Transcription panel */}
       <TranscriptionPanel

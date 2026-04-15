@@ -84,6 +84,7 @@ export const create = mutation({
       dueDate: args.dueDate,
       parentId: args.parentId,
       notes: args.notes,
+      doneAt: args.status === "done" ? now : undefined,
       updatedAt: now,
     });
   },
@@ -109,8 +110,16 @@ export const update = mutation({
       throw new Error("Not found");
     }
     const { id, ...rest } = args;
-    const patch: Partial<Doc<"tasks">> = { ...rest, updatedAt: Date.now() };
+    const now = Date.now();
+    const patch: Partial<Doc<"tasks">> = { ...rest, updatedAt: now };
     if (patch.tags) patch.tags = normalizeTags(patch.tags);
+    if (args.status !== undefined) {
+      if (args.status === "done" && existing.status !== "done") {
+        patch.doneAt = now;
+      } else if (args.status !== "done" && existing.status === "done") {
+        patch.doneAt = undefined;
+      }
+    }
     await ctx.db.patch(id, patch);
   },
 });

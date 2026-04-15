@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, BookOpen, ListChecks } from "lucide-react";
+import { Bot, BookOpen, ListChecks, Settings } from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "Journal", icon: BookOpen },
   { href: "/tasks", label: "Tasks", icon: ListChecks },
+  { href: "/settings/api-keys", label: "API Keys", icon: Settings },
 ];
 
 export function Navigation() {

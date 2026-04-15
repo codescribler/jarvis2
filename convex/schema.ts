@@ -39,8 +39,19 @@ export default defineSchema({
     dueDate: v.union(v.string(), v.null()),
     parentId: v.union(v.id("tasks"), v.null()),
     notes: v.optional(v.string()),
+    doneAt: v.optional(v.number()),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_user_parent", ["userId", "parentId"]),
+    .index("by_user_parent", ["userId", "parentId"])
+    .index("by_user_done", ["userId", "doneAt"]),
+
+  apiKeys: defineTable({
+    userId: v.id("users"),
+    hashedKey: v.string(),
+    label: v.string(),
+    lastUsedAt: v.optional(v.number()),
+  })
+    .index("by_hash", ["hashedKey"])
+    .index("by_user", ["userId"]),
 });

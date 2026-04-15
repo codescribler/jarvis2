@@ -8,9 +8,11 @@
  * @module
  */
 
+import type * as apiKeys from "../apiKeys.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as journal from "../journal.js";
+import type * as sync from "../sync.js";
 import type * as tasks from "../tasks.js";
 
 import type {
@@ -20,9 +22,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  apiKeys: typeof apiKeys;
   auth: typeof auth;
   http: typeof http;
   journal: typeof journal;
+  sync: typeof sync;
   tasks: typeof tasks;
 }>;
 

@@ -135,7 +135,7 @@ export const connectLiveTranscription = async (
 
   // Await the session so connection errors propagate to the caller
   const session = await ai.live.connect({
-    model: "gemini-2.0-flash-live-001",
+    model: "gemini-2.5-flash-native-audio-latest",
     callbacks: {
       onopen: () => {
         console.log("[Jarvis] Live session opened, starting audio capture");
@@ -213,9 +213,7 @@ export const connectLiveTranscription = async (
       },
     },
     config: {
-      responseModalities: [Modality.TEXT],
-      systemInstruction:
-        "Listen to the user. Do not speak or respond. Just listen silently.",
+      responseModalities: [Modality.AUDIO],
       inputAudioTranscription: {},
     },
   });

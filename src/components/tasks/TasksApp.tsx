@@ -22,7 +22,7 @@ import { MergeTasksModal } from "./MergeTasksModal";
 import { generateTaskSummary } from "@/services/task-summary";
 import { GitMerge, X } from "lucide-react";
 
-const priorityOrder: Record<string, number> = { urgent: 0, normal: 1, low: 2 };
+const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
 
 export function TasksApp() {
   const tasksFromServer = useTasks();

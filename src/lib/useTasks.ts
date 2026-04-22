@@ -7,9 +7,8 @@ import { Task } from "@/types/task";
 import { ExtractedTask } from "@/types";
 
 const PRIORITY_MAP: Record<string, Task["priority"]> = {
-  high: "urgent",
+  high: "high",
   medium: "normal",
-  low: "low",
 };
 
 export type CreateTaskInput = {

@@ -1,6 +1,6 @@
 import { Id } from "../../convex/_generated/dataModel";
 
-export type TaskPriority = "urgent" | "normal" | "low";
+export type TaskPriority = "urgent" | "high" | "normal" | "low";
 export type TaskStatus = "todo" | "in_progress" | "blocked" | "someday" | "done";
 export type TaskSize = 1 | 2 | 3 | 4 | 5;
 

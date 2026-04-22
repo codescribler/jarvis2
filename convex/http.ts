@@ -17,7 +17,7 @@ async function sha256Hex(input: string): Promise<string> {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
   "Access-Control-Max-Age": "86400",
 };
@@ -136,6 +136,54 @@ http.route({
     await ctx.runMutation(internal.apiKeys.touch, { id: record._id });
 
     return jsonResponse({ id: result.id }, 201);
+  }),
+});
+
+http.route({
+  pathPrefix: "/api/tasks/",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }),
+});
+
+http.route({
+  pathPrefix: "/api/tasks/",
+  method: "PATCH",
+  handler: httpAction(async (ctx, request) => {
+    const authResult = await authenticateKey(request);
+    if ("error" in authResult) return authResult.error;
+
+    const record = await ctx.runQuery(internal.apiKeys.getByHash, {
+      hashedKey: authResult.hashedKey,
+    });
+    if (!record) return jsonResponse({ error: "Invalid token" }, 401);
+
+    const url = new URL(request.url);
+    const taskId = url.pathname.slice("/api/tasks/".length);
+    if (!taskId) return jsonResponse({ error: "Missing task id" }, 400);
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonResponse({ error: "Invalid JSON body" }, 400);
+    }
+
+    const result = await ctx.runMutation(internal.sync.updateTaskForUser, {
+      userId: record.userId,
+      taskId,
+      input: body as Record<string, unknown>,
+    });
+
+    if ("error" in result) {
+      const status = result.code === "not_found" ? 404 : 400;
+      return jsonResponse({ error: result.error }, status);
+    }
+
+    await ctx.runMutation(internal.apiKeys.touch, { id: record._id });
+
+    return jsonResponse(result.task, 200);
   }),
 });
 

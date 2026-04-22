@@ -121,6 +121,115 @@ export const createTaskForUser = internalMutation({
   },
 });
 
+export const updateTaskForUser = internalMutation({
+  args: {
+    userId: v.id("users"),
+    taskId: v.string(),
+    input: v.any(),
+  },
+  handler: async (
+    ctx,
+    { userId, taskId, input },
+  ): Promise<
+    | { task: ReturnType<typeof serializeTask> }
+    | { error: string; code?: "not_found" }
+  > => {
+    const id = ctx.db.normalizeId("tasks", taskId);
+    if (!id) return { error: "Invalid task id" };
+
+    const existing = await ctx.db.get(id);
+    if (!existing || existing.userId !== userId) {
+      return { error: "Task not found", code: "not_found" };
+    }
+
+    if (typeof input !== "object" || input === null || Array.isArray(input)) {
+      return { error: "Body must be a JSON object" };
+    }
+    const raw = input as Record<string, unknown>;
+
+    const patch: Partial<Doc<"tasks">> = {};
+
+    if ("title" in raw) {
+      if (typeof raw.title !== "string") {
+        return { error: "title must be a string" };
+      }
+      const trimmed = raw.title.trim();
+      if (!trimmed) return { error: "title must not be empty" };
+      patch.title = trimmed;
+    }
+
+    if ("description" in raw) {
+      if (typeof raw.description !== "string") {
+        return { error: "description must be a string" };
+      }
+      patch.description = raw.description;
+    }
+
+    if ("notes" in raw) {
+      if (typeof raw.notes !== "string") {
+        return { error: "notes must be a string" };
+      }
+      patch.notes = raw.notes;
+    }
+
+    if ("priority" in raw) {
+      if (
+        typeof raw.priority !== "string" ||
+        !PRIORITIES.has(raw.priority as TaskPriority)
+      ) {
+        return { error: "priority must be one of urgent|high|normal|low" };
+      }
+      patch.priority = raw.priority as TaskPriority;
+    }
+
+    if ("status" in raw) {
+      if (
+        typeof raw.status !== "string" ||
+        !STATUSES.has(raw.status as TaskStatus)
+      ) {
+        return {
+          error: "status must be one of todo|in_progress|blocked|someday|done",
+        };
+      }
+      patch.status = raw.status as TaskStatus;
+    }
+
+    if ("size" in raw) {
+      if (typeof raw.size !== "number" || !SIZES.has(raw.size)) {
+        return { error: "size must be 1, 2, 3, 4 or 5" };
+      }
+      patch.size = raw.size as TaskSize;
+    }
+
+    if ("tags" in raw) {
+      patch.tags = normalizeTags(raw.tags);
+    }
+
+    if ("dueDate" in raw) {
+      if (raw.dueDate !== null && typeof raw.dueDate !== "string") {
+        return { error: "dueDate must be a string or null" };
+      }
+      patch.dueDate = raw.dueDate as string | null;
+    }
+
+    const now = Date.now();
+    patch.updatedAt = now;
+
+    if (patch.status !== undefined) {
+      if (patch.status === "done" && existing.status !== "done") {
+        patch.doneAt = now;
+      } else if (patch.status !== "done" && existing.status === "done") {
+        patch.doneAt = undefined;
+      }
+    }
+
+    await ctx.db.patch(id, patch);
+    const updated = await ctx.db.get(id);
+    if (!updated) return { error: "Task not found", code: "not_found" };
+    return { task: serializeTask(updated) };
+  },
+});
+
 export const pull = internalQuery({
   args: { userId: v.id("users"), since: v.number() },
   handler: async (ctx, { userId, since }) => {

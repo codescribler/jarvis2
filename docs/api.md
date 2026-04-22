@@ -212,7 +212,7 @@ Notes:
 
 - `parentId` is not exposed via this endpoint; POSTed tasks are always
   root-level.
-- Subtasks, merging, and updates are managed only inside the Jarvis UI.
+- Subtasks and merging are managed only inside the Jarvis UI.
 - Tasks created via this endpoint immediately appear in the next `/api/sync`
   response as `activeTasks` (or `newlyDoneTasks` if `status` was `done`).
 
@@ -228,13 +228,87 @@ curl -s -X POST \
 
 ---
 
+### `PATCH /api/tasks/:id`
+
+Update an existing task owned by the API key's user. Only fields present
+in the request body are changed; omitted fields are left as-is.
+
+#### Headers
+
+```
+Authorization: Bearer jv_...
+Content-Type: application/json
+```
+
+#### Request body
+
+All fields are optional. Same types as `POST /api/tasks` minus `parentId`.
+
+| Field         | Type                                      | Notes |
+|---------------|-------------------------------------------|-------|
+| `title`       | string                                    | Trimmed, non-empty |
+| `description` | string                                    |       |
+| `notes`       | string                                    | Pass `""` to clear |
+| `priority`    | `urgent` \| `high` \| `normal` \| `low`   |       |
+| `status`      | `todo` \| `in_progress` \| `blocked` \| `someday` \| `done` | Transitioning to `done` stamps `doneAt`; transitioning away clears it |
+| `size`        | `1` \| `2` \| `3` \| `4` \| `5`           |       |
+| `tags`        | string[]                                  | Trimmed, lower-cased, de-duplicated — **replaces** the existing tag list |
+| `dueDate`     | string \| null                            |       |
+
+Unknown fields are ignored. `parentId` cannot be changed via this endpoint.
+
+Example — change priority and tags:
+
+```json
+{ "priority": "high", "tags": ["work", "urgent"] }
+```
+
+#### Response
+
+`200 OK` — body is the updated task in the same shape as entries in the
+`/api/sync` response:
+
+```json
+{
+  "id": "k3abc...",
+  "title": "Draft Q2 report",
+  "description": "",
+  "notes": null,
+  "priority": "high",
+  "size": 3,
+  "status": "todo",
+  "tags": ["work", "urgent"],
+  "dueDate": null,
+  "parentId": null,
+  "doneAt": null,
+  "createdAt": 1744700000000,
+  "updatedAt": 1744800000000
+}
+```
+
+`400 Bad Request` — invalid JSON, missing/invalid task id, or invalid field value.
+`401 Unauthorized` — missing/invalid Bearer token.
+`404 Not Found` — the task doesn't exist, or is owned by a different user.
+
+#### Example
+
+```bash
+curl -s -X PATCH \
+  -H "Authorization: Bearer jv_..." \
+  -H "Content-Type: application/json" \
+  -d '{"status":"done"}' \
+  "https://<deployment>.convex.site/api/tasks/k3abc..."
+```
+
+---
+
 ## CORS
 
 All endpoints respond to `OPTIONS` preflight with:
 
 ```
 Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Methods: GET, POST, PATCH, OPTIONS
 Access-Control-Allow-Headers: Authorization, Content-Type
 ```
 

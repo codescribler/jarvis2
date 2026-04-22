@@ -121,7 +121,7 @@ the API key).
 - All timestamps are **unix milliseconds**.
 - `id`, `parentId` are Convex document IDs — treat them as opaque strings.
 - `notes`, `doneAt`, `dueDate`, `parentId` may be `null`.
-- `priority` ∈ `urgent | normal | low`
+- `priority` ∈ `urgent | high | normal | low`
 - `size` ∈ `1 | 2 | 3 | 4 | 5`
 - `status` ∈ `todo | in_progress | blocked | someday | done`
   (`someday` will never appear on this endpoint)
@@ -165,7 +165,7 @@ Only `title` is required. Defaults are applied to everything else.
 | `title`       | string                             | —          | Required, trimmed, non-empty |
 | `description` | string                             | `""`       |       |
 | `notes`       | string                             | unset      |       |
-| `priority`    | `urgent` \| `normal` \| `low`      | `normal`   |       |
+| `priority`    | `urgent` \| `high` \| `normal` \| `low` | `normal`   |       |
 | `status`      | `todo` \| `in_progress` \| `blocked` \| `someday` \| `done` | `todo` | If set to `done`, `doneAt` is stamped to now |
 | `size`        | `1` \| `2` \| `3` \| `4` \| `5`    | `3`        |       |
 | `tags`        | string[]                           | `[]`       | Trimmed, lower-cased, de-duplicated |

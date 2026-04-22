@@ -203,7 +203,7 @@ Full example:
 `400 Bad Request` — invalid JSON or invalid field value:
 
 ```json
-{ "error": "priority must be one of urgent|normal|low" }
+{ "error": "priority must be one of urgent|high|normal|low" }
 ```
 
 `401 Unauthorized` — missing/invalid Bearer token.

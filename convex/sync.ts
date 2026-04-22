@@ -2,12 +2,13 @@ import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
 
-type TaskPriority = "urgent" | "normal" | "low";
+type TaskPriority = "urgent" | "high" | "normal" | "low";
 type TaskStatus = "todo" | "in_progress" | "blocked" | "someday" | "done";
 type TaskSize = 1 | 2 | 3 | 4 | 5;
 
 const PRIORITIES: ReadonlySet<TaskPriority> = new Set([
   "urgent",
+  "high",
   "normal",
   "low",
 ]);
@@ -77,7 +78,7 @@ export const createTaskForUser = internalMutation({
     const priorityInput =
       typeof raw.priority === "string" ? raw.priority : "normal";
     if (!PRIORITIES.has(priorityInput as TaskPriority)) {
-      return { error: `priority must be one of urgent|normal|low` };
+      return { error: `priority must be one of urgent|high|normal|low` };
     }
     const priority = priorityInput as TaskPriority;
 

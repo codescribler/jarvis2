@@ -29,6 +29,7 @@ function normalizeTags(tags: string[]): string[] {
 
 const priorityValidator = v.union(
   v.literal("urgent"),
+  v.literal("high"),
   v.literal("normal"),
   v.literal("low"),
 );

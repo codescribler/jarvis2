@@ -18,6 +18,7 @@ export default defineSchema({
     description: v.string(),
     priority: v.union(
       v.literal("urgent"),
+      v.literal("high"),
       v.literal("normal"),
       v.literal("low"),
     ),

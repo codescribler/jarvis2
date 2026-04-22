@@ -4,6 +4,7 @@ import { TaskPriority } from "@/types/task";
 
 const styles: Record<TaskPriority, string> = {
   urgent: "bg-red-100 text-red-700",
+  high: "bg-orange-100 text-orange-700",
   normal: "bg-amber-100 text-amber-700",
   low: "bg-slate-100 text-slate-600",
 };

@@ -12,7 +12,7 @@ interface Props {
   onCancel: () => void;
 }
 
-const priorities: TaskPriority[] = ["urgent", "normal", "low"];
+const priorities: TaskPriority[] = ["urgent", "high", "normal", "low"];
 const statuses: TaskStatus[] = ["todo", "in_progress", "blocked", "someday", "done"];
 const statusLabels: Record<TaskStatus, string> = {
   todo: "Todo",
